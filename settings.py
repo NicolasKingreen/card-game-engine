@@ -7,6 +7,9 @@ class Settings:
     max_size = Vector2(pygame.display.list_modes()[0])
     desktop_size = Vector2(pygame.display.get_desktop_sizes()[0])
     fullscreen = False
-
     window_size = desktop_size if fullscreen else default_size
+
+    target_fps = 60
+
+    draw_debug = True
 

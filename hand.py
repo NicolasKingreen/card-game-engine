@@ -8,9 +8,13 @@ from math import sin, cos, asin, acos, radians, degrees, sqrt, factorial
 
 from card import Card, CardSuit, CardRank, CARD_SIZE
 
-display_width, display_height = Settings.window_size
-CIRCLE_POS = Vector2(display_width / 2, display_height + 600)
+
+# doesn't update if toggle fullscreen
+# display_width, display_height = Settings.window_size
+# CIRCLE_POS = Vector2(display_width / 2, display_height + 600)
 CIRCLE_RADIUS = 700
+CIRCLE_Y_OFFSET = 600
+
 
 MAX_CARDS_IN_HAND = 12
 
@@ -72,8 +76,8 @@ class Hand:
             # on_circle_positions.append(
             #     (400 + cos(radians(-90 + angles[i])) * 700,
             #      1200 + sin(radians(-90 + angles[i])) * 700)) # + CARD_SIZE[1] - 300))
-            on_circle_x = CIRCLE_POS[0] + cos(radians(-90 + angles[i])) * CIRCLE_RADIUS
-            on_circle_y = CIRCLE_POS[1] + sin(radians(-90 + angles[i])) * CIRCLE_RADIUS
+            on_circle_x = Settings.window_size.x / 2 + cos(radians(-90 + angles[i])) * CIRCLE_RADIUS
+            on_circle_y = Settings.window_size.y + CIRCLE_Y_OFFSET + sin(radians(-90 + angles[i])) * CIRCLE_RADIUS
             self.cards[i].set_on_circle_position((on_circle_x, on_circle_y))
         # return on_circle_positions
 
@@ -106,23 +110,41 @@ class Hand:
 
         hand_rect = pygame.rect.Rect(hand_left_pos[0], hand_left_pos[1], hand_width + CARD_SIZE[0], CARD_SIZE[1])
 
-        if hand_rect.collidepoint(mouse_pos):  # rect width must depend on cards amount
+        if hand_rect.collidepoint(mouse_pos):  # rect width must depend on the cards amount
 
             card_angles = self.find_angles()
-            mouse_angle = degrees(acos((mouse_pos[0] - CIRCLE_POS.x) / CIRCLE_RADIUS)) - 90
 
-            left_card_angle = sqrt(20 * (len(self.cards) - 1)) * 2
+            mouse_angle = degrees(acos((mouse_pos[0] - Settings.window_size.x / 2) / CIRCLE_RADIUS)) - 90
+            # this angle doesn't work well,
+            # it projects mouse x directly onto circle underneath;
+            # a better way would be to cast a ray to the circle's center
+            # and find an intersection with that circle (?)
+
+            # left_card_angle = sqrt(20 * (len(self.cards) - 1)) * 2
 
             hand_arc = card_angles[0] - card_angles[-1] if len(card_angles) > 1 else 5
-            card_arc = hand_arc / (len(self.cards))
+            card_arc = hand_arc / (len(self.cards))  # actually half an arc (?)
 
             # mouse_angle += card_arc
             # mouse_angle *= -1
             # mouse_angle = min(mouse_angle, card_angles[0] - 0.1)
 
-            match_index = 0
+            match_index = -111
             min_diff = 999
             for i, angle in enumerate(card_angles[::-1]):
+                # TODO: think about
+                # user sees only part of a card, so it doesn't make sense
+                # to compare mouse position to a card center;
+                # card_angle is as card center
+                # gotta offset by card_arc (basically card width on the arc)
+                #
+                # whole another way would be to detect collision
+                # between mouse position and card rectangle,
+                # but the rectangle should not update
+                # when card scales and offsets
+                # BUT: cards are rotated and their rectangles aren't
+
+                # if (abs(angle + card_arc - mouse_angle)) < min_diff:
                 if (abs(angle - mouse_angle)) < min_diff:
                     min_diff = abs(angle - mouse_angle)
                     match_index = i
@@ -132,7 +154,7 @@ class Hand:
             # card_index = int(mouse_angle / card_arc)
             # card_index = min(max(card_index, 0), len(self.cards)-1)
 
-            #print(f"{hand_arc:.2f} {card_angles[0]:.2f}..{card_angles[-1]:.2f}, {mouse_angle:.2f}, {card_index}")
+            print(f"{hand_arc:.2f} {card_angles[0]:.2f}..{card_angles[-1]:.2f}, {mouse_angle:.2f}, {card_index}")
 
             for i, card in enumerate(self.cards):
                 if i == card_index:
@@ -147,15 +169,6 @@ class Hand:
 
         self.drag_and_drop()
 
-        # mouse_pos = abs(mouse_pos[0] - left_side)
-        # for card in self.cards:
-        #
-        #     if mouse_pos[0]
-        #         card.hover()
-        #         break
-        #     else:
-        #         card.unhover()
-
     def draw(self, surface):
         # active_card = [] if self.active_card_index is None else [self.cards[self.active_card_index]]
         # for card in self.cards[::-1] + active_card:
@@ -167,6 +180,9 @@ class Hand:
             rect.y -= card.y_offset
             surface.blit(new_image, rect)
 
+        # TODO: find a better way
+        # basically goes through the all hand cards
+        # just to find the selected card and draw it on top
         for card in self.cards[::-1]:
             if card.is_hovered:
                 new_image = pygame.transform.rotate(card.image, -card.angle)
@@ -187,5 +203,23 @@ class Hand:
         #     rect.y -= card.y_offset
         #     surface.blit(new_image, rect)
         #     pygame.draw.circle(surface, (255, 0, 0), on_circle_position, 10)
-        # pygame.draw.line(surface, (255, 0, 0), (400, 0), (400, 600), 1)
-        # pygame.draw.circle(surface, (255, 0, 0), (400, 1200), 700, 1)
+
+        if Settings.draw_debug:
+
+            # card centers
+            for card in self.cards:
+                pygame.draw.circle(surface, (255, 0, 0), card.on_circle_position, 5)
+
+            # vertical line
+            pygame.draw.line(surface,
+                             (255, 0, 0),
+                             (Settings.window_size.x / 2, 0),
+                             (Settings.window_size.x / 2, Settings.window_size.y),
+                             1)
+
+            # hand arc forming circle
+            pygame.draw.circle(surface,
+                               (255, 0, 0),
+                               (Settings.window_size.x / 2,
+                                Settings.window_size.y + CIRCLE_Y_OFFSET),
+                               CIRCLE_RADIUS, 1)

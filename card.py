@@ -86,6 +86,7 @@ class Card:
         # print(self.is_hovered)
 
     def animate_hover(self):
+        # animation is not time dependant (!)
         if self.scale < 1.5:
             self.scale += 0.06
         if self.y_offset < CARD_SIZE[1] / 3:
@@ -99,6 +100,7 @@ class Card:
         self.animate_unhover()
 
     def animate_unhover(self):
+        # same as above
         if self.scale > 1:
             self.scale = max(self.scale - 0.06, 1)
         if self.y_offset > 0:

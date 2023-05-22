@@ -1,6 +1,8 @@
 import pygame
 pygame.init()
 
+import os
+
 from deck import Deck
 # from world import World
 from card import CARD_SIZE
@@ -16,7 +18,8 @@ class Game:
 
     def __init__(self):
         # print(Settings.desktop_size)
-        print(pygame.display.list_modes())
+        # print(pygame.display.list_modes())
+        print(Settings.desktop_size)
         display_flags = 0
         # display_flags |= pygame.SCALED  # what for?
         # display_flags |= pygame.FULLSCREEN
@@ -25,6 +28,7 @@ class Game:
             display_flags |= pygame.FULLSCREEN
             self.surface = pygame.display.set_mode(Settings.desktop_size, display_flags)
         else:
+            display_flags |= pygame.NOFRAME
             self.surface = pygame.display.set_mode(Settings.window_size, display_flags)
         self.clock = pygame.time.Clock()
         self.is_running = False
@@ -84,7 +88,7 @@ class Game:
     def run(self):
         self.is_running = True
         while self.is_running:
-            frame_time_ms = self.clock.tick(60)
+            frame_time_ms = self.clock.tick(Settings.target_fps)
             frame_time_s = frame_time_ms * 0.001
             self.process_events()
 
@@ -105,10 +109,20 @@ class Game:
                     self.hand.cards.pop(0)
                     # self.hand.set_cards_amount(self.hand.cards_amount-1)
                 elif event.key == pygame.K_f:
-                    pygame.display.toggle_fullscreen()
+                    # pygame.display.toggle_fullscreen()
+                    if Settings.fullscreen:
+                        # going windowed
+                        # win_x, win_y = (Settings.desktop_size - Settings.window_size) / 2
+                        # os.environ['SDL_VIDEO_WINDOW_POS'] = f'{win_x}, {win_y}'
+                        self.surface = pygame.display.set_mode(Settings.window_size, pygame.NOFRAME)
+                        Settings.window_size = Settings.default_size
+                    else:
+                        # going fullscreen
+                        self.surface = pygame.display.set_mode(Settings.desktop_size, pygame.FULLSCREEN)
+                        Settings.window_size = Settings.desktop_size
                     Settings.fullscreen = not Settings.fullscreen
-                elif event.key == pygame.K_s:
-                    print(self.deck.draw_card(), len(self.deck.cards))
+                elif event.key == pygame.K_j:
+                    Settings.draw_debug = not Settings.draw_debug
 
     def update(self, frame_time_s):
         self.hand.update(frame_time_s)
