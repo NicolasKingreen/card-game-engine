@@ -25,7 +25,7 @@ MAX_CARDS_IN_HAND = 12
 class Hand:
 
     def __init__(self, starting_cards):
-        self.cards_amount = 3
+        # self.cards_amount = 3
         # self.cards = [Card(CardSuit.HEARTS, CardRank.ACE) for i in range(self.cards_amount)]
         # self.cards = [
         #     Card(CardSuit.HEARTS, CardRank.ACE),
@@ -38,9 +38,9 @@ class Hand:
 
         self.active_card_index = None
 
-    def set_cards_amount(self, amount):
-        self.cards_amount = min(max(amount, 1), MAX_CARDS_IN_HAND)
-        self.cards = [Card() for i in range(self.cards_amount)]
+    # def set_cards_amount(self, amount):
+    #     self.cards_amount = min(max(amount, 1), MAX_CARDS_IN_HAND)
+    #     self.cards = [Card() for i in range(self.cards_amount)]
 
     def drag_and_drop(self):
         mouse_pos = pygame.mouse.get_pos()
@@ -48,26 +48,26 @@ class Hand:
             if pygame.mouse.get_pressed()[0]:
                 self.cards[self.active_card_index].on_circle_position = mouse_pos
 
-    def find_card_positions(self):
-        positions = []
-        heights = []
-        # heights = [CARD_SIZE[1] / 3, ]
-        screen_size = pygame.display.get_surface().get_size()
-        all_card_width = CARD_SIZE[0] * len(self.cards) * 0.7
-
-        step = all_card_width / len(self.cards)
-        height_step = (CARD_SIZE[1]) / 2 / len(self.cards)
-
-        pos = screen_size[0] // 2 - all_card_width // 2, screen_size[1] - CARD_SIZE[1] // 2
-        for i in range(len(self.cards)):
-            additional_height = abs((i - len(self.cards) // 2) * height_step)
-            heights.append(additional_height)
-            new_pos = pos[0] + i * step + CARD_SIZE[0]/2, pos[1] + additional_height
-            # print((i - len(self.cards) //2 ) * height_step)
-            self.cards[i].set_on_circle_position(new_pos)
-            #positions.append(new_pos)
-        #print(heights)
-        #return positions
+    # def find_card_positions(self):
+    #     positions = []
+    #     heights = []
+    #     # heights = [CARD_SIZE[1] / 3, ]
+    #     screen_size = pygame.display.get_surface().get_size()
+    #     all_card_width = CARD_SIZE[0] * len(self.cards) * 0.7
+    #
+    #     step = all_card_width / len(self.cards)
+    #     height_step = (CARD_SIZE[1]) / 2 / len(self.cards)
+    #
+    #     pos = screen_size[0] // 2 - all_card_width // 2, screen_size[1] - CARD_SIZE[1] // 2
+    #     for i in range(len(self.cards)):
+    #         additional_height = abs((i - len(self.cards) // 2) * height_step)
+    #         heights.append(additional_height)
+    #         new_pos = pos[0] + i * step + CARD_SIZE[0]/2, pos[1] + additional_height
+    #         # print((i - len(self.cards) //2 ) * height_step)
+    #         self.cards[i].set_on_circle_position(new_pos)
+    #         #positions.append(new_pos)
+    #     #print(heights)
+    #     #return positions
 
     def find_card_positions_2(self):
         angles = self.find_angles()
@@ -154,7 +154,7 @@ class Hand:
             # card_index = int(mouse_angle / card_arc)
             # card_index = min(max(card_index, 0), len(self.cards)-1)
 
-            print(f"{hand_arc:.2f} {card_angles[0]:.2f}..{card_angles[-1]:.2f}, {mouse_angle:.2f}, {card_index}")
+            # print(f"{hand_arc:.2f} {card_angles[0]:.2f}..{card_angles[-1]:.2f}, {mouse_angle:.2f}, {card_index}")
 
             for i, card in enumerate(self.cards):
                 if i == card_index:
@@ -168,6 +168,9 @@ class Hand:
                 card.unhover()
 
         self.drag_and_drop()
+
+        for card in self.cards:
+            card.update(frame_time_s)
 
     def draw(self, surface):
         # active_card = [] if self.active_card_index is None else [self.cards[self.active_card_index]]

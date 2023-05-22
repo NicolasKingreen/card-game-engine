@@ -5,8 +5,13 @@ from enum import Enum, IntEnum
 from textures import TextureID
 from resource_holder import TextureHolder
 
+from animation import Animation, AnimationType, AnimationManager
 
 CARD_SIZE = 120, 180
+
+# animation times (in seconds)
+SELECTION_SCALE_TIME = 0.1
+SELECTION_Y_OFFSET_TIME = 0.1
 
 
 class CardRank(IntEnum):
@@ -63,10 +68,10 @@ class Card:
         self.on_circle_position = 0
         self.angle = 0
 
-        self.is_hovered = False
+        # animations
+        self.animation_manager = AnimationManager()
 
-        # pygame.draw.rect(self.image, (124, 230, 40), (0, 0, CARD_SIZE[0], CARD_SIZE[1]))
-        # pygame.draw.rect(self.image, (123, 123, 123), (0, 0, CARD_SIZE[0], CARD_SIZE[1]), 1)
+        self.is_hovered = False
 
     @property
     def image(self):
@@ -77,34 +82,29 @@ class Card:
             image = pygame.transform.scale(image, target_size)
         return image
 
+    def update(self, frame_time_s):
+        if self.animation_manager.is_active():
+            self.animation_manager.update(frame_time_s)
+            self.scale = self.animation_manager.get_current_value_by_type(AnimationType.SCALE)
+            self.y_offset = self.animation_manager.get_current_value_by_type(AnimationType.Y_OFFSET)
+
     def hover(self):
         if not self.is_hovered:
             self.is_hovered = True
-            # self.set_scale(1.2)
-            # self.y_offset = CARD_SIZE[1] / 3
-        self.animate_hover()
-        # print(self.is_hovered)
 
-    def animate_hover(self):
-        # animation is not time dependant (!)
-        if self.scale < 1.5:
-            self.scale += 0.06
-        if self.y_offset < CARD_SIZE[1] / 3:
-            self.y_offset += 20
+            # animate selected card
+            scale_animation = Animation(AnimationType.SCALE, 1.0, 1.5, SELECTION_SCALE_TIME)
+            y_offset_animation = Animation(AnimationType.Y_OFFSET, 0, CARD_SIZE[1] / 3, SELECTION_Y_OFFSET_TIME)
+            self.animation_manager.add([scale_animation, y_offset_animation])
 
     def unhover(self):
         if self.is_hovered:
             self.is_hovered = False
-            self.set_scale(1)
-            self.y_offset = 0
-        self.animate_unhover()
 
-    def animate_unhover(self):
-        # same as above
-        if self.scale > 1:
-            self.scale = max(self.scale - 0.06, 1)
-        if self.y_offset > 0:
-            self.y_offset = max(self.y_offset - 20, 0)
+            # animate it back to hand
+            scale_animation = Animation(AnimationType.SCALE, 1.5, 1.0, SELECTION_SCALE_TIME)
+            y_offset_animation = Animation(AnimationType.Y_OFFSET, CARD_SIZE[1] / 3, 0, SELECTION_Y_OFFSET_TIME)
+            self.animation_manager.add([scale_animation, y_offset_animation])
 
     def set_scale(self, value):
         self.scale = value
@@ -115,6 +115,6 @@ class Card:
     def set_angle(self, value):
         self.angle = value
 
-    def smooth_scale_up(self, value):
-        if self.scale <= value:
-            self.scale += 0.1
+    # def smooth_scale_up(self, value):
+    #     if self.scale <= value:
+    #         self.scale += 0.1
