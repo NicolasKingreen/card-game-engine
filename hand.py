@@ -101,14 +101,18 @@ class Hand:
 
         mouse_pos = pygame.mouse.get_pos()
 
+        # Y position of hand = middle card Y position
         hand_left_pos = self.cards[-1].on_circle_position[0] - CARD_SIZE[0] / 2, \
-            self.cards[-1].on_circle_position[1] - CARD_SIZE[1] // 2
+                        self.cards[len(self.cards) // 2:len(self.cards) // 2 + 1][0].on_circle_position[1] \
+                        - CARD_SIZE[1] // 2
         hand_right_pos = self.cards[0].on_circle_position[0] - CARD_SIZE[0] / 2, \
-            self.cards[0].on_circle_position[1] - CARD_SIZE[1] // 2
+                         self.cards[len(self.cards) // 2:len(self.cards) // 2 + 1][0].on_circle_position[1] \
+                         - CARD_SIZE[1] // 2
 
         hand_width = hand_right_pos[0] - hand_left_pos[0]
 
-        hand_rect = pygame.rect.Rect(hand_left_pos[0], hand_left_pos[1], hand_width + CARD_SIZE[0], CARD_SIZE[1])
+        hand_rect = pygame.rect.Rect(hand_left_pos[0], hand_left_pos[1], hand_width + CARD_SIZE[0],
+                                     CARD_SIZE[1] + 10)  # 10 pixels to screen bottom
 
         if hand_rect.collidepoint(mouse_pos):  # rect width must depend on the cards amount
 
