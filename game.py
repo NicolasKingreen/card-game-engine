@@ -21,15 +21,14 @@ class Game:
 
     def __init__(self):
         display_flags = 0
-        # display_flags |= pygame.SCALED  # what for?
+        #display_flags |= pygame.SCALED  # what for?
         # display_flags |= pygame.FULLSCREEN
         pygame.display.set_caption("Card Game")
         if Settings.fullscreen:
             display_flags |= pygame.FULLSCREEN
-            self.surface = pygame.display.set_mode(Settings.desktop_size, display_flags)
         else:
             display_flags |= pygame.NOFRAME
-            self.surface = pygame.display.set_mode(Settings.window_size, display_flags)
+        self.surface = pygame.display.set_mode(Settings.window_size, display_flags)
         self.clock = pygame.time.Clock()
         self.is_running = False
 
@@ -37,7 +36,8 @@ class Game:
 
         self.init_game()
 
-    def _load_textures(self):
+    @staticmethod
+    def _load_textures():
 
         card_base_image = pygame.image.load('resources/textures/card_base.png').convert_alpha()
         card_parts_image = pygame.image.load('resources/textures/card_parts.png').convert_alpha()
@@ -98,17 +98,22 @@ class Game:
                         self.hand.remove(0)
                 elif event.key == pygame.K_f:
                     # pygame.display.toggle_fullscreen()
+                    # I don't know why, but pygame.NOFRAME doesn't work
+                    display_flags = 0
                     if Settings.fullscreen:
                         # going windowed
                         # win_x, win_y = (Settings.desktop_size - Settings.window_size) / 2
                         # os.environ['SDL_VIDEO_WINDOW_POS'] = f'{win_x}, {win_y}'
-                        self.surface = pygame.display.set_mode(Settings.window_size, pygame.NOFRAME)
+                        display_flags |= pygame.NOFRAME
                         Settings.window_size = Settings.default_size
                     else:
                         # going fullscreen
-                        self.surface = pygame.display.set_mode(Settings.desktop_size, pygame.FULLSCREEN)
+                        display_flags |= pygame.FULLSCREEN
                         Settings.window_size = Settings.desktop_size
                     Settings.fullscreen = not Settings.fullscreen
+                    self.surface = pygame.display.set_mode(Settings.window_size, display_flags)
+                    self.hand.update_card_positions()
+                    self.table._update_card_positions()  # OWOWOWOOWOWOWOWOW
                 elif event.key == pygame.K_j:
                     Settings.draw_debug = not Settings.draw_debug
                 elif event.key == pygame.K_s:
