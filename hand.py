@@ -69,16 +69,10 @@ class Hand:
             # if Input.mouse_buttons_held[0]:
             elif Input.mouse_buttons_held[0]:
                 self.cards[self.active_card_index].position = mouse_pos
-                # BUG: on wide window edges acos breakes the code
-
-                #if self.cards[self.active_card_index].angle < 30:
 
                 self.cards[self.active_card_index].angle = (degrees(acos(min(max((mouse_pos[0] - Settings.window_size.x / 2) / CIRCLE_RADIUS, -1), 1))) - 90)
 
 
-                    #self.cards[self.active_card_index].angle = 90
-                #print((mouse_pos[0] - Settings.window_size.x / 2) / CIRCLE_RADIUS)
-                #min(max((mouse_pos[0] - Settings.window_size.x / 2) / CIRCLE_RADIUS, -1), 1)
 
     def switch_cards(self, index_card_a, index_card_b):
         self.cards[index_card_a], self.cards[index_card_b] = self.cards[index_card_b], self.cards[index_card_a]
