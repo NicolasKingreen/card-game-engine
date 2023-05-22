@@ -37,6 +37,8 @@ class Hand:
         self.cards = starting_cards
 
         self.active_card_index = None
+        self.current_card_index = None
+
 
     # def set_cards_amount(self, amount):
     #     self.cards_amount = min(max(amount, 1), MAX_CARDS_IN_HAND)
@@ -44,9 +46,20 @@ class Hand:
 
     def drag_and_drop(self):
         mouse_pos = pygame.mouse.get_pos()
+
         if self.active_card_index is not None:
             if pygame.mouse.get_pressed()[0]:
                 self.cards[self.active_card_index].on_circle_position = mouse_pos
+            else:
+                if self.active_card_index != self.current_card_index:
+                    self.switch_cards(self.active_card_index, self.current_card_index)
+                self.active_card_index = None
+
+        #print(self.active_card_index)
+
+    def switch_cards(self, index_card_a, index_card_b):
+        self.cards[index_card_a], self.cards[index_card_b] = self.cards[index_card_b], self.cards[index_card_a]
+
 
     # def find_card_positions(self):
     #     positions = []
@@ -96,7 +109,7 @@ class Hand:
         return angles
 
     def update(self, frame_time_s):
-        self.find_angles()
+        #self.find_angles()
         self.find_card_positions_2()
 
         mouse_pos = pygame.mouse.get_pos()
@@ -154,6 +167,8 @@ class Hand:
                     match_index = i
 
             card_index = match_index
+            self.current_card_index = card_index
+
 
             # card_index = int(mouse_angle / card_arc)
             # card_index = min(max(card_index, 0), len(self.cards)-1)
@@ -162,10 +177,13 @@ class Hand:
 
             for i, card in enumerate(self.cards):
                 if i == card_index:
-                    self.cards[card_index].hover()
+
                     # if not pygame.mouse.get_pressed()[0]:
-                    self.active_card_index = i  # ?
+                    self.cards[card_index].hover()
+                    if self.active_card_index is None:
+                        self.active_card_index = i  # ?
                 else:
+
                     self.cards[i].unhover()
         else:
             for card in self.cards:
@@ -175,6 +193,10 @@ class Hand:
 
         for card in self.cards:
             card.update(frame_time_s)
+
+
+
+
 
     def draw(self, surface):
         # active_card = [] if self.active_card_index is None else [self.cards[self.active_card_index]]
