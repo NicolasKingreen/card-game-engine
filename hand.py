@@ -47,11 +47,11 @@ class Hand:
     def drag_and_drop(self):
         mouse_pos = pygame.mouse.get_pos()
 
-        if self.active_card_index is not None:
+        if self.active_card_index is not None :
             if pygame.mouse.get_pressed()[0]:
                 self.cards[self.active_card_index].on_circle_position = mouse_pos
             else:
-                if self.active_card_index != self.current_card_index:
+                if self.active_card_index != self.current_card_index and self.current_card_index is not None:
                     self.switch_cards(self.active_card_index, self.current_card_index)
                 self.active_card_index = None
 
@@ -188,6 +188,7 @@ class Hand:
         else:
             for card in self.cards:
                 card.unhover()
+            self.current_card_index = None
 
         self.drag_and_drop()
 
