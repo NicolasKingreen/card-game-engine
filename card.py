@@ -1,4 +1,5 @@
 import pygame
+from pygame import Vector2
 
 from enum import Enum, IntEnum
 
@@ -7,11 +8,12 @@ from resource_holder import TextureHolder
 
 from animation import Animation, AnimationType, AnimationManager
 
-CARD_SIZE = 120, 180
+CARD_SIZE = Vector2(120, 180)
 
 # animation times (in seconds)
 SELECTION_SCALE_TIME = 0.1
 SELECTION_Y_OFFSET_TIME = 0.1
+RELEASE_TIME = 0.1
 
 
 class CardRank(IntEnum):
@@ -59,17 +61,17 @@ class Card:
         self.suit = suit
         self.rank = rank
 
-        # for displaying
+        # for animations
+        self.animation_manager = AnimationManager()
         self.scale = 1
-        self._texture_id = suit_rank_to_texture_id(suit, rank)
-        self.rect = self.image.get_rect()
         self.y_offset = 0
-
-        self.on_circle_position = 0
         self.angle = 0
 
-        # animations
-        self.animation_manager = AnimationManager()
+        # for displaying
+        self._texture_id = suit_rank_to_texture_id(suit, rank)
+        self.rect = self.image.get_rect()
+
+        self.position = Vector2()
 
         self.is_hovered = False
 
@@ -80,13 +82,34 @@ class Card:
             target_size = (image.get_width() * self.scale,
                            image.get_height() * self.scale)
             image = pygame.transform.scale(image, target_size)
+        if self.angle != 0:
+            image = pygame.transform.rotate(image, self.angle)
         return image
 
     def update(self, frame_time_s):
+        # print(self.animation_manager.animations)
         if self.animation_manager.is_active():
             self.animation_manager.update(frame_time_s)
+
             self.scale = self.animation_manager.get_current_value_by_type(AnimationType.SCALE)
             self.y_offset = self.animation_manager.get_current_value_by_type(AnimationType.Y_OFFSET)
+
+            x = self.animation_manager.get_current_value_by_type(AnimationType.X_MOVE)
+            y = self.animation_manager.get_current_value_by_type(AnimationType.Y_MOVE)
+            if x is not None and y is not None:
+                self.position = Vector2(x, y)
+
+            # weirdos below
+
+            x_move_anim = self.animation_manager.get_animation_by_type(AnimationType.X_MOVE)
+            if x_move_anim:
+                if x_move_anim.is_finished():
+                    self.animation_manager.remove_by_type(AnimationType.X_MOVE)
+
+            y_move_anim = self.animation_manager.get_animation_by_type(AnimationType.Y_MOVE)
+            if y_move_anim:
+                if y_move_anim.is_finished():
+                    self.animation_manager.remove_by_type(AnimationType.Y_MOVE)
 
     def hover(self):
         if not self.is_hovered:
@@ -106,15 +129,14 @@ class Card:
             y_offset_animation = Animation(AnimationType.Y_OFFSET, CARD_SIZE[1] / 3, 0, SELECTION_Y_OFFSET_TIME)
             self.animation_manager.add([scale_animation, y_offset_animation])
 
-    def set_scale(self, value):
-        self.scale = value
+    def release(self, home_position):
+        x_move_animation = Animation(AnimationType.X_MOVE, self.position[0], home_position[0], RELEASE_TIME)
+        y_move_animation = Animation(AnimationType.Y_MOVE, self.position[1], home_position[1], RELEASE_TIME)
+        self.animation_manager.add([x_move_animation, y_move_animation])
 
-    def set_on_circle_position(self, pos: (int, int)):
-        self.on_circle_position = pos
-
-    def set_angle(self, value):
-        self.angle = value
-
-    # def smooth_scale_up(self, value):
-    #     if self.scale <= value:
-    #         self.scale += 0.1
+    def draw(self, surface):
+        new_image = self.image
+        rect = new_image.get_rect(center=self.position)
+        self.rect = rect
+        rect.y -= self.y_offset
+        surface.blit(new_image, rect)

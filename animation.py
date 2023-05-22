@@ -9,6 +9,9 @@ class AnimationType(Enum):
     NONE = 0,
     SCALE = 1,
     Y_OFFSET = 2,
+    X_MOVE = 3,
+    Y_MOVE = 4,
+    MOVE_TO_2D = 5  # couldn't implement
 
 
 class Animation:

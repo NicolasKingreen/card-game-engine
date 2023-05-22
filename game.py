@@ -3,12 +3,15 @@ pygame.init()
 
 import os
 
-from deck import Deck
 # from world import World
 from card import CARD_SIZE
-from hand import Hand, CardRank, CardSuit
+
+from deck import Deck
+from hand import Hand, CardRank, CardSuit, CIRCLE_RADIUS, CIRCLE_Y_OFFSET, MAX_CARDS_IN_HAND, START_CARDS_AMOUNT
+from table import Table, MAX_CARDS_ON_TABLE
 
 from settings import Settings
+from input import Input
 
 from textures import TextureID
 from resource_holder import TextureHolder
@@ -17,9 +20,6 @@ from resource_holder import TextureHolder
 class Game:
 
     def __init__(self):
-        # print(Settings.desktop_size)
-        # print(pygame.display.list_modes())
-        print(Settings.desktop_size)
         display_flags = 0
         # display_flags |= pygame.SCALED  # what for?
         # display_flags |= pygame.FULLSCREEN
@@ -36,17 +36,8 @@ class Game:
         self._load_textures()
 
         self.init_game()
-        # self.world = World(self.surface)
 
-        self.left_button_clicked = False
-
-    def _load_textures(selfo):
-
-        # empty card
-        # image = pygame.Surface(CARD_SIZE, pygame.SRCALPHA)
-        # image.fill((124, 230, 40))
-        # pygame.draw.rect(image, (123, 123, 123), (0, 0, CARD_SIZE[0], CARD_SIZE[1]), 1)
-        # TextureHolder.add_surface(TextureID.EMPTY_CARD, image)
+    def _load_textures(self):
 
         card_base_image = pygame.image.load('resources/textures/card_base.png').convert_alpha()
         card_parts_image = pygame.image.load('resources/textures/card_parts.png').convert_alpha()
@@ -58,8 +49,6 @@ class Game:
             on_card_suit_rect = suit_rect.copy()
             on_card_suit_rect.center = (15, 45)
 
-            # suit_image = pygame.Surface(suit_rect.size, pygame.SRCALPHA)
-            # suit_image.blit(card_parts_image, (0, 0), suit_rect)
             for rank in CardRank:
                 card_image = card_base_image.copy()
                 card_image.blit(card_parts_image, on_card_suit_rect, suit_rect)
@@ -77,13 +66,12 @@ class Game:
 
                 texture_name = (suit.name + '_' + rank.name).upper()
                 TextureHolder.add_surface(TextureID[texture_name], card_image)
-
-                # print(texture_name)
                 # exec(f"TextureHolder.add_surface(TextureID.{texture_id}, card_image)")
 
     def init_game(self):
         self.deck = Deck()
         self.hand = Hand([self.deck.draw_card() for _ in range(6)])
+        self.table = Table()
 
     def run(self):
         self.is_running = True
@@ -91,7 +79,7 @@ class Game:
             frame_time_ms = self.clock.tick(Settings.target_fps)
             frame_time_s = frame_time_ms * 0.001
             self.process_events()
-
+            Input.update(frame_time_s)
             self.update(frame_time_s)
             self.render()
 
@@ -103,11 +91,11 @@ class Game:
                 if event.key == pygame.K_ESCAPE:
                     pygame.event.post(pygame.event.Event(pygame.QUIT))
                 elif event.key == pygame.K_d:
-                    # self.hand.set_cards_amount(self.hand.cards_amount+1)
-                    self.hand.cards.append(self.deck.draw_card())
+                    if len(self.hand.cards) < MAX_CARDS_IN_HAND:
+                        self.hand.add(self.deck.draw_card())
                 elif event.key == pygame.K_a:
-                    self.hand.cards.pop(0)
-                    # self.hand.set_cards_amount(self.hand.cards_amount-1)
+                    if len(self.hand.cards) > 0:
+                        self.hand.remove(0)
                 elif event.key == pygame.K_f:
                     # pygame.display.toggle_fullscreen()
                     if Settings.fullscreen:
@@ -123,14 +111,45 @@ class Game:
                     Settings.fullscreen = not Settings.fullscreen
                 elif event.key == pygame.K_j:
                     Settings.draw_debug = not Settings.draw_debug
+                elif event.key == pygame.K_s:
+                    if len(self.table.cards) < MAX_CARDS_ON_TABLE:
+                        self.table.place_card(self.deck.draw_card())
+                elif event.key == pygame.K_w:
+                    if len(self.table.cards) > 0:
+                        self.table.cards.pop()
+                        self.table._update_card_positions()
+                elif event.key == pygame.K_c:
+                    self.hand.add(self.table.clear())
+                elif event.key == pygame.K_r:
+                    self.init_game()
 
     def update(self, frame_time_s):
         self.hand.update(frame_time_s)
+        self.table.update(frame_time_s)
 
     def render(self):
-        # clear window
         self.surface.fill((255, 255, 255))
-        # self.world.draw()
+        self.table.draw(self.surface)
         self.hand.draw(self.surface)
 
+        if Settings.draw_debug:
+
+            # card centers
+            for card in self.hand.cards:
+                pygame.draw.circle(self.surface, (255, 0, 0),
+                                   card.position, 5)
+
+            # vertical line
+            pygame.draw.line(self.surface,
+                             (255, 0, 0),
+                             (Settings.window_size.x / 2, 0),
+                             (Settings.window_size.x / 2, Settings.window_size.y),
+                             1)
+
+            # hand arc forming circle
+            pygame.draw.circle(self.surface,
+                               (255, 0, 0),
+                               (Settings.window_size.x / 2,
+                                Settings.window_size.y + CIRCLE_Y_OFFSET),
+                               CIRCLE_RADIUS, 1)
         pygame.display.flip()

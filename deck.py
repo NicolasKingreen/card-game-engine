@@ -10,4 +10,6 @@ class Deck:
         shuffle(self.cards)
 
     def draw_card(self):
+        if len(self.cards) < 1:
+            raise Exception("Deck is empty!")
         return self.cards.pop()
