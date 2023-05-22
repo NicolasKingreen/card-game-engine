@@ -94,7 +94,7 @@ class Game:
                     if len(self.hand.cards) < MAX_CARDS_IN_HAND:
                         self.hand.add(self.deck.draw_card())
                 elif event.key == pygame.K_a:
-                    if len(self.hand.cards) > 0:
+                    if len(self.hand.cards) > 1:
                         self.hand.remove(0)
                 elif event.key == pygame.K_f:
                     # pygame.display.toggle_fullscreen()

@@ -30,7 +30,7 @@ class Hand:
     def __init__(self, starting_cards):
         self.cards = starting_cards
 
-        self.hand_rect = None
+        self.interaction_rect = None
 
         self.active_card_index = None
         self.current_card_index = None
@@ -53,7 +53,6 @@ class Hand:
         self.update_card_positions()
 
     def drag_and_drop(self):
-        mouse_pos = Input.mouse_pos
 
         # if there is a grabbed card
         if self.active_card_index is not None:
@@ -66,13 +65,12 @@ class Hand:
                     self.cards[self.active_card_index].release(card_home_position)
                 self.active_card_index = None
 
-            # if Input.mouse_buttons_held[0]:
+            # if holding a card
             elif Input.mouse_buttons_held[0]:
-                self.cards[self.active_card_index].position = mouse_pos
-
-                self.cards[self.active_card_index].angle = (degrees(acos(min(max((mouse_pos[0] - Settings.window_size.x / 2) / CIRCLE_RADIUS, -1), 1))) - 90)
-
-
+                self.cards[self.active_card_index].position = Input.mouse_pos
+                on_screen_normalized_x = max(min((Input.mouse_pos.x - Settings.window_size.x / 2) / CIRCLE_RADIUS, 1), -1)
+                mouse_angle = degrees(acos(on_screen_normalized_x)) - 90
+                self.cards[self.active_card_index].angle = mouse_angle
 
     def switch_cards(self, index_card_a, index_card_b):
         self.cards[index_card_a], self.cards[index_card_b] = self.cards[index_card_b], self.cards[index_card_a]
@@ -85,63 +83,54 @@ class Hand:
         left_angle = sqrt(20 * (len(self.cards) - 1))
         angle_step = (left_angle * 2 / (len(self.cards) - 1)) if len(self.cards) > 1 else 0
         for i in range(len(self.cards)):
-            new_angle = -(left_angle - angle_step * i)
+            new_angle = left_angle - angle_step * i
             angles.append(new_angle)
-        return angles[::-1]
+        return angles
 
     def update_card_angles(self):
         angles = self.find_card_angles()
         for card, new_angle in zip(self.cards, angles):
             card.angle = new_angle
+        return angles
 
     def find_card_positions(self):
         angles = self.find_card_angles()
         positions = []
         for i in range(len(self.cards)):
-            on_circle_x = Settings.window_size.x / 2 + cos(radians(-90 + angles[i])) * CIRCLE_RADIUS
+            on_circle_x = Settings.window_size.x / 2 + cos(radians(90 + angles[i])) * CIRCLE_RADIUS
             on_circle_y = Settings.window_size.y + CIRCLE_Y_OFFSET + sin(radians(-90 + angles[i])) * CIRCLE_RADIUS
             positions.append(Vector2(on_circle_x, on_circle_y))
-        return positions[::-1]
+        return positions
 
     def update_card_positions(self):
         positions = self.find_card_positions()
         for card, new_position in zip(self.cards, positions):
             card.position = new_position
-
-        self.hand_rect = self.find_hand_rect()
+        self.interaction_rect = self.find_hand_rect()
+        return positions
 
     def find_hand_rect(self):
         # Y position of hand = middle card Y position
         topleft_x = self.cards[0].position.x - CARD_SIZE.x / 2
-        topleft_y = self.cards[len(self.cards)//2:len(self.cards)//2+1][0].position[1] - CARD_SIZE[1] // 2
-
+        topleft_y = self.cards[len(self.cards)//2:len(self.cards)//2+1][0].position.y - CARD_SIZE.y // 2
         right_x = self.cards[-1].position.x + CARD_SIZE.x / 2
-
         hand_width = right_x - topleft_x
         hand_height = CARD_SIZE[1] + 10
-
         hand_rect = pygame.rect.Rect(topleft_x, topleft_y,
                                      hand_width, hand_height)
         return hand_rect
 
     def update(self, frame_time_s):
         # self.update_card_positions()
-        self.update_card_angles()
+        card_angles = self.update_card_angles()
 
-        if self.hand_rect.collidepoint(Input.mouse_pos):  # rect width must depend on the cards amount
-
-            card_angles = self.find_card_angles()
+        if self.interaction_rect.collidepoint(Input.mouse_pos):
 
             mouse_angle = degrees(acos((Input.mouse_pos.x - Settings.window_size.x / 2) / CIRCLE_RADIUS)) - 90
             # this angle doesn't work well,
             # it projects mouse x directly onto circle underneath;
             # a better way would be to cast a ray to the circle's center
             # and find an intersection with that circle (?)
-
-            # left_card_angle = sqrt(20 * (len(self.cards) - 1)) * 2
-
-            hand_arc = card_angles[-1] - card_angles[0] if len(card_angles) > 1 else 5
-            card_arc = hand_arc / (len(self.cards))  # actually half an arc (?)
 
             match_index = -111
             min_diff = 999
@@ -168,9 +157,9 @@ class Hand:
             # print(f"{hand_arc:.2f} {card_angles[0]:.2f}..{card_angles[-1]:.2f}, {mouse_angle:.2f}, {card_index}")
 
             for i, card in enumerate(self.cards):
-                if i == self.current_card_index:
+                if i == self.current_card_index and i != self.active_card_index:
                     self.cards[self.current_card_index].hover()
-                    # if Input.mouse_buttons_held_timers[0] >= 0.2:
+                    # if Input.mouse_buttons_held_timers[0] >= 0.2:  # could be used with hold timer
                     if Input.mouse_buttons_pressed[0]:
                         self.active_card_index = i  # ?
                 else:
@@ -202,4 +191,5 @@ class Hand:
         if card_for_later_draw:
             card_for_later_draw.draw(surface)
 
-
+        if Settings.draw_debug:
+            pygame.draw.rect(surface, (255, 0, 0), self.interaction_rect, 1)

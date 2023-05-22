@@ -10,10 +10,15 @@ from animation import Animation, AnimationType, AnimationManager
 
 CARD_SIZE = Vector2(120, 180)
 
+
+# animation values
+SELECTION_SCALE = 1.1
+SELECTION_Y_OFFSET = CARD_SIZE.y / 4
+
 # animation times (in seconds)
 SELECTION_SCALE_TIME = 0.1
 SELECTION_Y_OFFSET_TIME = 0.1
-RELEASE_TIME = 0.1
+RELEASE_TIME = 0.2
 
 
 class CardRank(IntEnum):
@@ -116,8 +121,8 @@ class Card:
             self.is_hovered = True
 
             # animate selected card
-            scale_animation = Animation(AnimationType.SCALE, 1.0, 1.5, SELECTION_SCALE_TIME)
-            y_offset_animation = Animation(AnimationType.Y_OFFSET, 0, CARD_SIZE[1] / 3, SELECTION_Y_OFFSET_TIME)
+            scale_animation = Animation(AnimationType.SCALE, 1.0, SELECTION_SCALE, SELECTION_SCALE_TIME)
+            y_offset_animation = Animation(AnimationType.Y_OFFSET, 0, SELECTION_Y_OFFSET, SELECTION_Y_OFFSET_TIME)
             self.animation_manager.add([scale_animation, y_offset_animation])
 
     def unhover(self):
@@ -125,8 +130,8 @@ class Card:
             self.is_hovered = False
 
             # animate it back to hand
-            scale_animation = Animation(AnimationType.SCALE, 1.5, 1.0, SELECTION_SCALE_TIME)
-            y_offset_animation = Animation(AnimationType.Y_OFFSET, CARD_SIZE[1] / 3, 0, SELECTION_Y_OFFSET_TIME)
+            scale_animation = Animation(AnimationType.SCALE, SELECTION_SCALE, 1.0, SELECTION_SCALE_TIME)
+            y_offset_animation = Animation(AnimationType.Y_OFFSET, SELECTION_Y_OFFSET, 0, SELECTION_Y_OFFSET_TIME)
             self.animation_manager.add([scale_animation, y_offset_animation])
 
     def release(self, home_position):
@@ -140,3 +145,4 @@ class Card:
         self.rect = rect
         rect.y -= self.y_offset
         surface.blit(new_image, rect)
+
