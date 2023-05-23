@@ -25,20 +25,31 @@ class Table:
     def __init__(self):
         self.cards = []
         self.active_card = None
+        self.initial_position = None
+
+    @staticmethod
+    def place_card_at_position(card, pos):
+        card.position = pos
+
+    @staticmethod
+    def get_card_current_pos(self, card):
+        return card.position
 
     def drag_and_drop(self):
         if self.active_card:
             self.active_card.position = Input.mouse_pos
 
-    def update(self, frame_time_s):
+    def update_active_card(self):
         for card in self.cards:
             if card.rect.collidepoint(Input.mouse_pos):
-                if Input.mouse_buttons_held[0]:
-                    if self.active_card is None:
+                if self.active_card is None:
+                    if Input.mouse_buttons_pressed[0]:
                         self.active_card = card
+                        self.initial_position = self.active_card.position
         if Input.mouse_buttons_released[0]:
-            self.cards.remove(self.active_cardss)
             self.active_card = None
+
+    def update(self, frame_time_s):
         self.drag_and_drop()
 
     def find_card_positions(self):

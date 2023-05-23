@@ -80,7 +80,7 @@ class Hand:
     # TODO: implement card insertion (between two cards)
 
     def insert_card(self, card):
-        if Input.mouse_buttons_released[0]:
+        if len(self.cards) < MAX_CARDS_IN_HAND:
             old_card_list = self.cards.copy()
             cards_before_index = old_card_list[:self.current_card_index]
             cards_after_index = old_card_list[self.current_card_index:]
@@ -92,6 +92,9 @@ class Hand:
             self.cards[new_card_index].release(card_home_position)
             for card in self.cards:
                 card.unhover()
+            return True
+        else:
+            return False
 
     def find_card_angles(self):
         angles = []
@@ -192,6 +195,8 @@ class Hand:
         # update animations
         for card in self.cards:
             card.update(frame_time_s)
+
+
 
     def draw(self, surface):
 

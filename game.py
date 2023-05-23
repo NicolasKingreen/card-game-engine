@@ -127,16 +127,24 @@ class Game:
                     self.hand.add(self.table.clear())
                 elif event.key == pygame.K_r:
                     self.init_game()
-                elif event.key == pygame.K_SPACE:
-                    pass
+
+    def process_insertion_card_in_hand(self):
+        if not self.hand.interaction_rect.collidepoint(Input.mouse_pos):
+            self.table.update_active_card()
+        elif self.table.active_card:
+            if Input.mouse_buttons_released[0]:
+                if self.hand.insert_card(self.table.active_card):
+                    self.table.cards.remove(self.table.active_card)
+                    self.table.active_card = None
+                else:
+                    self.table.active_card.release(self.table.initial_position)
+                    self.table.active_card = None
+                self.table._update_card_positions()
 
     def update(self, frame_time_s):
-        if self.table.active_card:
-            self.hand.insert_card(self.table.active_card)
         self.hand.update(frame_time_s)
         self.table.update(frame_time_s)
-
-
+        self.process_insertion_card_in_hand()
 
     def render(self):
         self.surface.fill((255, 255, 255))
