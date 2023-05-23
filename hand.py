@@ -38,6 +38,7 @@ class Hand:
         self.update_card_positions()
 
     def add(self, what: Card | Iterable[Card]):
+
         if isinstance(what, Card):
             self.cards.append(what)
         else:
@@ -77,6 +78,20 @@ class Hand:
         self.update_card_positions()
 
     # TODO: implement card insertion (between two cards)
+
+    def insert_card(self, card):
+        if Input.mouse_buttons_released[0]:
+            old_card_list = self.cards.copy()
+            cards_before_index = old_card_list[:self.current_card_index]
+            cards_after_index = old_card_list[self.current_card_index:]
+            new_card_index = len(cards_before_index) + 1
+
+            self.cards = cards_before_index + [card] + cards_after_index
+            self.update_card_positions()
+            card_home_position = self.find_card_positions()[new_card_index]
+            self.cards[new_card_index].release(card_home_position)
+            for card in self.cards:
+                card.unhover()
 
     def find_card_angles(self):
         angles = []
@@ -120,6 +135,16 @@ class Hand:
                                      hand_width, hand_height)
         return hand_rect
 
+    def get_active_card_index(self):
+        for i, card in enumerate(self.cards):
+            if i == self.current_card_index and i != self.active_card_index:
+                self.cards[self.current_card_index].hover()
+                # if Input.mouse_buttons_held_timers[0] >= 0.2:  # could be used with hold timer
+                if Input.mouse_buttons_pressed[0]:
+                    self.active_card_index = i  # ?
+            else:
+                self.cards[i].unhover()
+
     def update(self, frame_time_s):
         # self.update_card_positions()
         card_angles = self.update_card_angles()
@@ -155,15 +180,8 @@ class Hand:
             self.current_card_index = match_index
 
             # print(f"{hand_arc:.2f} {card_angles[0]:.2f}..{card_angles[-1]:.2f}, {mouse_angle:.2f}, {card_index}")
+            self.get_active_card_index()
 
-            for i, card in enumerate(self.cards):
-                if i == self.current_card_index and i != self.active_card_index:
-                    self.cards[self.current_card_index].hover()
-                    # if Input.mouse_buttons_held_timers[0] >= 0.2:  # could be used with hold timer
-                    if Input.mouse_buttons_pressed[0]:
-                        self.active_card_index = i  # ?
-                else:
-                    self.cards[i].unhover()
         else:
             for card in self.cards:
                 card.unhover()

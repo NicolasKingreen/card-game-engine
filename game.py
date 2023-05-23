@@ -127,10 +127,16 @@ class Game:
                     self.hand.add(self.table.clear())
                 elif event.key == pygame.K_r:
                     self.init_game()
+                elif event.key == pygame.K_SPACE:
+                    pass
 
     def update(self, frame_time_s):
+        if self.table.active_card:
+            self.hand.insert_card(self.table.active_card)
         self.hand.update(frame_time_s)
         self.table.update(frame_time_s)
+
+
 
     def render(self):
         self.surface.fill((255, 255, 255))

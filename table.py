@@ -1,5 +1,7 @@
+import pygame
 from pygame import Vector2
 from settings import Settings
+from input import Input
 
 
 MAX_CARDS_ON_TABLE = 12  # should be equal hand size
@@ -22,9 +24,22 @@ class Table:
 
     def __init__(self):
         self.cards = []
+        self.active_card = None
+
+    def drag_and_drop(self):
+        if self.active_card:
+            self.active_card.position = Input.mouse_pos
 
     def update(self, frame_time_s):
-        pass
+        for card in self.cards:
+            if card.rect.collidepoint(Input.mouse_pos):
+                if Input.mouse_buttons_held[0]:
+                    if self.active_card is None:
+                        self.active_card = card
+        if Input.mouse_buttons_released[0]:
+            self.cards.remove(self.active_cardss)
+            self.active_card = None
+        self.drag_and_drop()
 
     def find_card_positions(self):
         x_gap = max(200 * (1 / len(self.cards) + 0.5), MIN_X_GAP)
