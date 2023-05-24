@@ -47,6 +47,7 @@ class Hand:
         self.update_card_positions()
 
     def remove(self, card_or_index: Card | int):
+
         if isinstance(card_or_index, Card):
             self.cards.remove(card_or_index)
         else:
@@ -81,17 +82,19 @@ class Hand:
 
     def insert_card(self, card):
         if len(self.cards) < MAX_CARDS_IN_HAND:
+            #print(card.scale)
             old_card_list = self.cards.copy()
             cards_before_index = old_card_list[:self.current_card_index]
             cards_after_index = old_card_list[self.current_card_index:]
             new_card_index = len(cards_before_index) + 1
 
             self.cards = cards_before_index + [card] + cards_after_index
-            self.update_card_positions()
             card_home_position = self.find_card_positions()[new_card_index]
+            print(card.rect)
             self.cards[new_card_index].release(card_home_position)
-            for card in self.cards:
-                card.unhover()
+            self.update_card_positions()
+            card.hover()
+            #card.unhover()
             return True
         else:
             return False
@@ -196,12 +199,12 @@ class Hand:
         for card in self.cards:
             card.update(frame_time_s)
 
-
-
     def draw(self, surface):
-
         card_for_later_draw = None
         for i, card in enumerate(self.cards):
+            if card.scale is None:
+                print(card)
+                continue
             if self.active_card_index is not None:
                 if self.active_card_index == i:
                     card_for_later_draw = card

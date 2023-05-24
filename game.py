@@ -137,13 +137,13 @@ class Game:
                     self.table.cards.remove(self.table.active_card)
                     self.table.active_card = None
                 else:
-                    self.table.active_card.release(self.table.initial_position)
+                    #self.table.active_card.release(self.table.initial_position)
                     self.table.active_card = None
                 self.table._update_card_positions()
 
     def update(self, frame_time_s):
-        self.hand.update(frame_time_s)
         self.table.update(frame_time_s)
+        self.hand.update(frame_time_s)
         self.process_insertion_card_in_hand()
 
     def render(self):

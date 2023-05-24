@@ -95,7 +95,6 @@ class Card:
         # print(self.animation_manager.animations)
         if self.animation_manager.is_active():
             self.animation_manager.update(frame_time_s)
-
             self.scale = self.animation_manager.get_current_value_by_type(AnimationType.SCALE)
             self.y_offset = self.animation_manager.get_current_value_by_type(AnimationType.Y_OFFSET)
 
