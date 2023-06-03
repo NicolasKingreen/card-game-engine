@@ -124,9 +124,12 @@ class Game:
                         self.table.cards.pop()
                         self.table._update_card_positions()
                 elif event.key == pygame.K_c:
-                    self.hand.add(self.table.clear())
+                    if MAX_CARDS_IN_HAND - len(self.hand.cards) >= len(self.table.cards):
+                        self.hand.add(self.table.clear())
                 elif event.key == pygame.K_r:
                     self.init_game()
+                elif event.key == pygame.K_e:
+                    self.hand.sort_cards()
 
     def process_insertion_card_in_hand(self):
         if not self.hand.interaction_rect.collidepoint(Input.mouse_pos):

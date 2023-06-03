@@ -11,9 +11,14 @@ from math import sin, cos, asin, acos, radians, degrees, sqrt, factorial
 from card import Card, CardSuit, CardRank, CARD_SIZE
 
 
-# doesn't update if toggle fullscreen
-# display_width, display_height = Settings.window_size
+# doesn't update when toggling fullscreen
 # CIRCLE_POS = Vector2(display_width / 2, display_height + 600)
+
+def get_circle_pos():
+    return Vector2(Settings.window_size.x / 2, Settings.window_size.y + 600)
+
+
+# CIRCLE_POS =
 CIRCLE_RADIUS = 700
 CIRCLE_Y_OFFSET = 600
 
@@ -22,7 +27,7 @@ MAX_CARDS_IN_HAND = 12
 START_CARDS_AMOUNT = 6
 
 
-# TODO: implement game mechanics
+# TODO: implement game mechanics, ui (text, buttons)
 
 
 class Hand:
@@ -38,20 +43,31 @@ class Hand:
         self.update_card_positions()
 
     def add(self, what: Card | Iterable[Card]):
+    # def add(self, *cards):
 
+        new_cards = []
         if isinstance(what, Card):
-            self.cards.append(what)
+            new_cards.append(what)
         else:
-            for card in what:
-                self.cards.append(card)
+            new_cards.extend(what)
+
+        self.cards.extend(new_cards)
+        # self.cards.extend(*cards)
+        new_positions = self.find_card_positions()
+        for card, position in zip(self.cards[-len(new_cards)+1:], new_positions[-len(new_cards)+1:]):
+            # print(card.position, "goes to", position)
+            card.release(position)
         self.update_card_positions()
 
     def remove(self, card_or_index: Card | int):
-
         if isinstance(card_or_index, Card):
             self.cards.remove(card_or_index)
         else:
             self.cards.pop(card_or_index)
+        self.update_card_positions()
+
+    def sort_cards(self):
+        self.cards.sort(key=lambda x: (x.suit.value, x.rank.value))
         self.update_card_positions()
 
     def drag_and_drop(self):
@@ -82,7 +98,7 @@ class Hand:
 
     def insert_card(self, card):
         if len(self.cards) < MAX_CARDS_IN_HAND:
-            #print(card.scale)
+            # print(card.scale)
             old_card_list = self.cards.copy()
             cards_before_index = old_card_list[:self.current_card_index]
             cards_after_index = old_card_list[self.current_card_index:]
@@ -90,7 +106,7 @@ class Hand:
 
             self.cards = cards_before_index + [card] + cards_after_index
             card_home_position = self.find_card_positions()[new_card_index]
-            print(card.rect)
+            # print(card.rect)
             self.cards[new_card_index].release(card_home_position)
             self.update_card_positions()
             card.hover()
@@ -202,9 +218,9 @@ class Hand:
     def draw(self, surface):
         card_for_later_draw = None
         for i, card in enumerate(self.cards):
-            if card.scale is None:
-                print(card)
-                continue
+            # if card.scale is None:
+            #     print(card)
+            #     continue
             if self.active_card_index is not None:
                 if self.active_card_index == i:
                     card_for_later_draw = card

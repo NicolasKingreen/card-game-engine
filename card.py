@@ -3,12 +3,16 @@ from pygame import Vector2
 
 from enum import Enum, IntEnum
 
+from settings import Settings
 from textures import TextureID
 from resource_holder import TextureHolder
 
 from animation import Animation, AnimationType, AnimationManager
 
 CARD_SIZE = Vector2(120, 180)
+
+
+DECK_POSITION = Vector2(0, Settings.window_size.y / 2)
 
 
 # animation values
@@ -76,7 +80,7 @@ class Card:
         self._texture_id = suit_rank_to_texture_id(suit, rank)
         self.rect = self.image.get_rect()
 
-        self.position = Vector2()
+        self.position = DECK_POSITION
 
         self.is_hovered = False
 
@@ -95,8 +99,13 @@ class Card:
         # print(self.animation_manager.animations)
         if self.animation_manager.is_active():
             self.animation_manager.update(frame_time_s)
-            self.scale = self.animation_manager.get_current_value_by_type(AnimationType.SCALE)
-            self.y_offset = self.animation_manager.get_current_value_by_type(AnimationType.Y_OFFSET)
+            scale = self.animation_manager.get_current_value_by_type(AnimationType.SCALE)
+            if scale:
+                self.scale = scale
+
+            y_offset = self.animation_manager.get_current_value_by_type(AnimationType.Y_OFFSET)
+            if y_offset:
+                self.y_offset = y_offset
 
             x = self.animation_manager.get_current_value_by_type(AnimationType.X_MOVE)
             y = self.animation_manager.get_current_value_by_type(AnimationType.Y_MOVE)

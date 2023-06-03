@@ -43,7 +43,8 @@ class Animation:
             self.current_value = max(new_value, self.end_value)
 
     def is_finished(self):
-        return self.current_time_s >= self.time_s
+        return self.current_value == self.end_value
+        # return self.current_time_s >= self.time_s
 
     def __repr__(self):
         return f'Animation(start_value={self.start_value}, end_value={self.end_value}): ' \
