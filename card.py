@@ -23,6 +23,7 @@ SELECTION_Y_OFFSET = CARD_SIZE.y / 4
 SELECTION_SCALE_TIME = 0.1
 SELECTION_Y_OFFSET_TIME = 0.1
 RELEASE_TIME = 0.2
+MOVE_TIME = 0.2
 
 
 class CardRank(IntEnum):
@@ -96,33 +97,42 @@ class Card:
         return image
 
     def update(self, frame_time_s):
-        # print(self.animation_manager.animations)
         if self.animation_manager.is_active():
             self.animation_manager.update(frame_time_s)
+
             scale = self.animation_manager.get_current_value_by_type(AnimationType.SCALE)
-            if scale:
+            if scale is not None:
                 self.scale = scale
 
+            angle = self.animation_manager.get_current_value_by_type(AnimationType.ROTATE)
+            if angle is not None:
+                self.angle = angle
+
             y_offset = self.animation_manager.get_current_value_by_type(AnimationType.Y_OFFSET)
-            if y_offset:
+            if y_offset is not None:
                 self.y_offset = y_offset
 
             x = self.animation_manager.get_current_value_by_type(AnimationType.X_MOVE)
+            if x is not None:
+                self.position = Vector2(x, self.position.y)
+
             y = self.animation_manager.get_current_value_by_type(AnimationType.Y_MOVE)
-            if x is not None and y is not None:
-                self.position = Vector2(x, y)
+            if y is not None:
+                self.position = Vector2(self.position.x, y)
 
             # weirdos below
 
             x_move_anim = self.animation_manager.get_animation_by_type(AnimationType.X_MOVE)
-            if x_move_anim:
-                if x_move_anim.is_finished():
-                    self.animation_manager.remove_by_type(AnimationType.X_MOVE)
+            if x_move_anim and x_move_anim.is_finished():
+                self.animation_manager.remove_by_type(AnimationType.X_MOVE)
 
             y_move_anim = self.animation_manager.get_animation_by_type(AnimationType.Y_MOVE)
-            if y_move_anim:
-                if y_move_anim.is_finished():
-                    self.animation_manager.remove_by_type(AnimationType.Y_MOVE)
+            if y_move_anim and y_move_anim.is_finished():
+                self.animation_manager.remove_by_type(AnimationType.Y_MOVE)
+
+            rotate_anim = self.animation_manager.get_animation_by_type(AnimationType.ROTATE)
+            if rotate_anim and rotate_anim.is_finished():
+                self.animation_manager.remove_by_type(AnimationType.ROTATE)
 
     def hover(self):
         if not self.is_hovered:
@@ -142,10 +152,20 @@ class Card:
             y_offset_animation = Animation(AnimationType.Y_OFFSET, SELECTION_Y_OFFSET, 0, SELECTION_Y_OFFSET_TIME)
             self.animation_manager.add([scale_animation, y_offset_animation])
 
-    def release(self, home_position):
+    def release(self, home_position, start_angle):
         x_move_animation = Animation(AnimationType.X_MOVE, self.position[0], home_position[0], RELEASE_TIME)
         y_move_animation = Animation(AnimationType.Y_MOVE, self.position[1], home_position[1], RELEASE_TIME)
         self.animation_manager.add([x_move_animation, y_move_animation])
+
+        rotate_animation = Animation(AnimationType.ROTATE, start_angle, 0, RELEASE_TIME)
+        self.animation_manager.add(rotate_animation)
+
+    def move_to(self, position):
+        # print("moving", self, "from", self.position, "to", position)
+        x_move_animation = Animation(AnimationType.X_MOVE, self.position.x, position.x, MOVE_TIME)
+        self.animation_manager.add(x_move_animation)
+        y_move_animation = Animation(AnimationType.Y_MOVE, self.position.y, position.y, MOVE_TIME)
+        self.animation_manager.add(y_move_animation)
 
     def draw(self, surface):
         new_image = self.image
@@ -153,4 +173,7 @@ class Card:
         self.rect = rect
         rect.y -= self.y_offset
         surface.blit(new_image, rect)
+
+    def __repr__(self):
+        return f'Card<{self.suit.name}:{self.rank.name}>'
 

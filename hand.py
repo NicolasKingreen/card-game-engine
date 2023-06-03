@@ -9,6 +9,10 @@ from input import Input
 from math import sin, cos, asin, acos, radians, degrees, sqrt, factorial
 
 from card import Card, CardSuit, CardRank, CARD_SIZE
+from animation import AnimationType
+
+from textures import TextureID
+from resource_holder import TextureHolder
 
 
 # doesn't update when toggling fullscreen
@@ -19,8 +23,11 @@ def get_circle_pos():
 
 
 # CIRCLE_POS =
-CIRCLE_RADIUS = 700
-CIRCLE_Y_OFFSET = 600
+# was 700, 600
+# CIRCLE_RADIUS = 700
+# CIRCLE_Y_OFFSET = 600
+CIRCLE_RADIUS = 1000
+CIRCLE_Y_OFFSET = 930
 
 
 MAX_CARDS_IN_HAND = 12
@@ -40,6 +47,12 @@ class Hand:
         self.active_card_index = None
         self.current_card_index = None
 
+        self.swap_on_release = False
+        self.swap_indicator_angle = 0
+
+        # TODO: maybe should store hand card "home" positions
+        self.card_home_positions = []
+
         self.update_card_positions()
 
     def add(self, what: Card | Iterable[Card]):
@@ -53,10 +66,10 @@ class Hand:
 
         self.cards.extend(new_cards)
         # self.cards.extend(*cards)
-        new_positions = self.find_card_positions()
-        for card, position in zip(self.cards[-len(new_cards)+1:], new_positions[-len(new_cards)+1:]):
+        # new_positions = self.find_card_positions()
+        # for card, position in zip(self.cards[-len(new_cards):], new_positions[-len(new_cards):]):
             # print(card.position, "goes to", position)
-            card.release(position)
+            # card.release(position, 90)
         self.update_card_positions()
 
     def remove(self, card_or_index: Card | int):
@@ -66,35 +79,48 @@ class Hand:
             self.cards.pop(card_or_index)
         self.update_card_positions()
 
+        # TODO: fix bug can drag cards only when removed one
+
     def sort_cards(self):
         self.cards.sort(key=lambda x: (x.suit.value, x.rank.value))
         self.update_card_positions()
 
     def drag_and_drop(self):
+        self.swap_on_release = False
 
         # if there is a grabbed card
         if self.active_card_index is not None:
+            # TODO: project mouse position on circle rather than just using x
+            on_screen_normalized_x = max(min((Input.mouse_pos.x - Settings.window_size.x / 2) / CIRCLE_RADIUS, 1), -1)
+            mouse_angle = degrees(acos(on_screen_normalized_x)) - 90
+
             if Input.mouse_buttons_released[0]:
                 if self.active_card_index != self.current_card_index and self.current_card_index is not None:
-                    self.switch_cards(self.active_card_index, self.current_card_index)
-                    # TODO: add swap indicator
+                    # released on top of another card
+                    self.swap_cards(self.active_card_index, self.current_card_index)
                 else:
-                    card_home_position = self.find_card_positions()[self.active_card_index]
-                    self.cards[self.active_card_index].release(card_home_position)
+                    # released somewhere on screen
+                    card_home_position = self.find_card_home_positions()[self.active_card_index]
+                    self.cards[self.active_card_index].release(card_home_position, mouse_angle)
+
                 self.active_card_index = None
 
             # if holding a card
             elif Input.mouse_buttons_held[0]:
+
+                # TODO: fix bug when removing cards from hand while holding a card crashes the game
+
+                # moving grabbed card
                 self.cards[self.active_card_index].position = Input.mouse_pos
-                on_screen_normalized_x = max(min((Input.mouse_pos.x - Settings.window_size.x / 2) / CIRCLE_RADIUS, 1), -1)
-                mouse_angle = degrees(acos(on_screen_normalized_x)) - 90
                 self.cards[self.active_card_index].angle = mouse_angle
 
-    def switch_cards(self, index_card_a, index_card_b):
-        self.cards[index_card_a], self.cards[index_card_b] = self.cards[index_card_b], self.cards[index_card_a]
-        self.update_card_positions()
+                # if card can swap
+                if self.active_card_index != self.current_card_index and self.current_card_index is not None:
+                    self.swap_on_release = True
 
-    # TODO: implement card insertion (between two cards)
+    def swap_cards(self, card_index_a, card_index_b):
+        self.cards[card_index_a], self.cards[card_index_b] = self.cards[card_index_b], self.cards[card_index_a]
+        self.update_card_positions()
 
     def insert_card(self, card):
         if len(self.cards) < MAX_CARDS_IN_HAND:
@@ -105,7 +131,7 @@ class Hand:
             new_card_index = len(cards_before_index) + 1
 
             self.cards = cards_before_index + [card] + cards_after_index
-            card_home_position = self.find_card_positions()[new_card_index]
+            card_home_position = self.find_card_home_positions()[new_card_index]
             # print(card.rect)
             self.cards[new_card_index].release(card_home_position)
             self.update_card_positions()
@@ -115,7 +141,7 @@ class Hand:
         else:
             return False
 
-    def find_card_angles(self):
+    def find_card_home_angles(self):
         angles = []
         left_angle = sqrt(20 * (len(self.cards) - 1))
         angle_step = (left_angle * 2 / (len(self.cards) - 1)) if len(self.cards) > 1 else 0
@@ -125,13 +151,16 @@ class Hand:
         return angles
 
     def update_card_angles(self):
-        angles = self.find_card_angles()
+        angles = self.find_card_home_angles()
         for card, new_angle in zip(self.cards, angles):
+            # if anim := card.animation_manager.get_animation_by_type(AnimationType.ROTATE):
+            #     if not anim.is_finished():
+            #         continue
             card.angle = new_angle
         return angles
 
-    def find_card_positions(self):
-        angles = self.find_card_angles()
+    def find_card_home_positions(self):
+        angles = self.find_card_home_angles()
         positions = []
         for i in range(len(self.cards)):
             on_circle_x = Settings.window_size.x / 2 + cos(radians(90 + angles[i])) * CIRCLE_RADIUS
@@ -140,17 +169,20 @@ class Hand:
         return positions
 
     def update_card_positions(self):
-        positions = self.find_card_positions()
-        for card, new_position in zip(self.cards, positions):
-            card.position = new_position
+        self.card_home_positions = self.find_card_home_positions()
+        for card, new_position in zip(self.cards, self.card_home_positions):
+            # card.position = new_position
+            if card.position != new_position:
+                card.move_to(new_position)
         self.interaction_rect = self.find_hand_rect()
-        return positions
+        return self.card_home_positions[:]
 
     def find_hand_rect(self):
+        positions = self.card_home_positions[:]
         # Y position of hand = middle card Y position
-        topleft_x = self.cards[0].position.x - CARD_SIZE.x / 2
-        topleft_y = self.cards[len(self.cards)//2:len(self.cards)//2+1][0].position.y - CARD_SIZE.y // 2
-        right_x = self.cards[-1].position.x + CARD_SIZE.x / 2
+        topleft_x = positions[0].x - CARD_SIZE.x / 2
+        topleft_y = positions[len(self.cards)//2:len(self.cards)//2+1][0].y - CARD_SIZE.y // 2
+        right_x = positions[-1].x + CARD_SIZE.x / 2
         hand_width = right_x - topleft_x
         hand_height = CARD_SIZE[1] + 10
         hand_rect = pygame.rect.Rect(topleft_x, topleft_y,
@@ -168,8 +200,14 @@ class Hand:
                 self.cards[i].unhover()
 
     def update(self, frame_time_s):
+        if self.swap_on_release:
+            self.swap_indicator_angle += 180 * frame_time_s
+        else:
+            self.swap_indicator_angle = 0
+
         # self.update_card_positions()
         card_angles = self.update_card_angles()
+        # print([card.position for card in self.cards])
 
         if self.interaction_rect.collidepoint(Input.mouse_pos):
 
@@ -232,6 +270,13 @@ class Hand:
 
         if card_for_later_draw:
             card_for_later_draw.draw(surface)
+
+        if self.swap_on_release:
+            swap_image = TextureHolder.get(TextureID.SWAP)
+            if self.swap_indicator_angle != 0:
+                swap_image = pygame.transform.rotate(swap_image, self.swap_indicator_angle)
+            swap_rect = swap_image.get_rect(center=Input.mouse_pos)
+            surface.blit(swap_image, swap_rect)
 
         if Settings.draw_debug:
             pygame.draw.rect(surface, (255, 0, 0), self.interaction_rect, 1)

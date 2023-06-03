@@ -32,7 +32,27 @@ class TextureHolder:
     def get(resource_id):
         image = TextureHolder.resources.get(resource_id)
         if image is None:
-            raise Exception("Resource not found!")
+            raise Exception("Texture not found!")
         return image
 
+
+class FontHolder:
+    resources = {}
+
+    @staticmethod
+    def load(resource_id, filename, font_size=16):
+        font = pygame.font.Font(filename, font_size)
+        FontHolder.resources[resource_id] = font
+
+    @staticmethod
+    def load_from_system(resource_id, font_name, font_size=16):
+        font = pygame.font.SysFont(font_name, font_size)
+        FontHolder.resources[resource_id] = font
+
+    @staticmethod
+    def get(resource_id):
+        font = FontHolder.resources.get(resource_id)
+        if font is None:
+            raise Exception("Font not found!")
+        return font
 

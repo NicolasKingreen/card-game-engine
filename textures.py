@@ -7,6 +7,15 @@ class TextureID(Enum):
     # TEST_CARD1 = 1,
     # TEST_CARD2 = 2,
 
+    # utility
+    SWAP = auto(),
+
+    # suits
+    SUIT_DIAMONDS = auto(),
+    SUIT_HEARTS = auto(),
+    SUIT_CLUBS = auto(),
+    SUIT_SPADES = auto(),
+
     # diamonds cards
     DIAMONDS_ACE = auto(),
     DIAMONDS_TWO = auto(),

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import Iterable
 from math import copysign
 
@@ -6,17 +6,23 @@ from math import copysign
 
 
 class AnimationType(Enum):
-    NONE = 0,
-    SCALE = 1,
-    Y_OFFSET = 2,
-    X_MOVE = 3,
-    Y_MOVE = 4,
-    MOVE_TO_2D = 5  # couldn't implement
+    NONE = auto(),
+
+    SCALE = auto(),
+    ROTATE = auto(),
+
+    Y_OFFSET = auto(),
+
+    X_MOVE = auto(),
+    Y_MOVE = auto(),
+    MOVE_TO_2D = auto()  # couldn't implement
 
 
 class Animation:
 
-    def __init__(self, animation_type: AnimationType, start_value, end_value, time_s):
+    def __init__(self, animation_type: AnimationType, start_value, end_value, time_s, looped=False):
+
+        # TODO: implement looped animations
 
         self.type = animation_type
 
@@ -39,7 +45,7 @@ class Animation:
         new_value = self.current_value + self.speed * frame_time_s
         if self.speed_sign > 0:
             self.current_value = min(new_value, self.end_value)
-        else:
+        elif self.speed_sign < 0:
             self.current_value = max(new_value, self.end_value)
 
     def is_finished(self):
