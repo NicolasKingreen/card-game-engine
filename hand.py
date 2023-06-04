@@ -133,7 +133,7 @@ class Hand:
             self.cards = cards_before_index + [card] + cards_after_index
             card_home_position = self.find_card_home_positions()[new_card_index]
             # print(card.rect)
-            self.cards[new_card_index].release(card_home_position)
+            self.cards[new_card_index].move_to(card_home_position)
             self.update_card_positions()
             card.hover()
             #card.unhover()
